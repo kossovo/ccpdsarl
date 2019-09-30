@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+    <data>
+        <record id="view_cash_tree" model="ir.ui.view">
+            <field name="name">cash.tree</field>
+            <field name="model">cash.register</field>
+            <field name="type">tree</field>
+            <field name="priority" eval="8"/>
+            <field name="arch" type="xml">
+                <tree string="Caisse">
+                    <field name="name"/>
+                    <field name="date"/>
+                    <field name="journal_id"/>
+                    <field name="user_id"/>
+                    <field name="balance_start"/>
+                    <field name="balance_end"/>
+                    <field name="state"/>
+                </tree>
+            </field>
+        </record>
+        
+        <record id="view_cash_form" model="ir.ui.view">
+            <field name="name">cash.form</field>
+            <field name="model">cash.register</field>
+            <field name="type">form</field>
+            <field name="priority" eval="8"/>
+            <field name="arch" type="xml">
+                <form string="Caisse">
+                    <header>
+                        <button name="cash_close" states="open" string="Close CashBox" type="object" class="oe_highlight"/>
+                        <button name="button_open" states="draft" string="Open CashBox" type="object" class="oe_highlight"/>
+                        <button name="button_cancel" states="confirm,open" string="Cancel CashBox" type="object"/>
+                        <field name="state" widget="statusbar" nolabel="1" statusbar_visible="draft,confirm"/>
+                    </header>
+                    <sheet string="Caisse">
+                         <label for="name" class="oe_edit_only" attrs="{'invisible':[('name','=','/')]}"/>
+                        <h1><field name="name" class="oe_inline" attrs="{'invisible':[('name','=','/')]}"/></h1>
+                        <group>
+                            <group>
+                                <field name="journal_id" widget="selection" domain="[('type', '=', 'cash')]"/>
+                                <field name="user_id" attrs="{'readonly':[('state','!=','draft')]}" string="Responsible"/>
+                                <field name="company_id" widget="selection" groups="base.group_multi_company"/>
+                            </group>
+                            <group>
+                                <field name="date" attrs="{'readonly':[('state','!=','draft')]}"/>
+                                <field name="closing_date" readonly="1"/>
+                                <field name="currency" invisible="1"/>
+                            </group>
+                        </group>
+                        <notebook>
+                            <page string="Transaction en liquide'" attrs="{'invisible': [('state','=','draft')]}">
+                                <field name="line_ids" context="{'date':date}">
+                                    <tree editable="bottom" string="Lignes de caisse" colors="grey:invoice_id!=False">
+                                        <field name="sequence" invisible="1"/>
+                                        <field name="date" />
+                                        <field name="name" />
+                                        <field name="reference" />
+                                        <field name="partner_id"/>
+                                        <field name="invoice_id"/>
+                                        <field name="amount"/>
+                                    </tree>
+                                </field>
+                            </page>
+                        </notebook>
+                        <group>
+                            <group class="oe_subtotal_footer oe_right">
+                                <label for="balance_start" class="oe_subtotal_footer_separator oe_open_balance" string="Solde Ouverture" style="padding-right: 23px !important; padding-top: 6px !important;"/>
+                                <field name="balance_start" attrs="{'readonly' : [('state', '=', 'confirm')]}" nolabel="1" widget="monetary" class="oe_subtotal_footer_separator oe_open_balance" options="{'currency_field': 'currency'}" help="Total of opening cash control lines"/>
+                        
+                            </group>
+                            <group>
+                                <label for="balance_end" string="= Solde de cloture" class="oe_force_bold oe_mini_subtotal_footer_separator" style="padding-right: 20px !important;" help="Sum of opening balance and transactions."/>
+                                <field name="balance_end" nolabel="1" class="oe_bold oe_account_total" widget="monetary" options="{'currency_field': 'currency'}"/>
+                            </group>
+
+                        </group>
+                    </sheet>
+                    <div class="oe_chatter">
+                        <field name="message_follower_ids" widget="mail_followers"
+                            help="Follow this cash register to track the events associated with it and its subtickets"
+                            groups="base.group_user"/>
+                        <field name="activity_ids" widget="mail_activity"/>
+                        <field name="message_ids" widget="mail_thread"/>
+                    </div>
+
+                </form>
+            </field>
+        </record>
+        
+        <record id="view_cash_search" model="ir.ui.view">
+            <field name="name">cash.search</field>
+            <field name="model">cash.register</field>
+            <field name="type">search</field>
+            <field name="priority" eval="8"/>
+            <field name="arch" type="xml">
+            <search string="Caisse">
+                <field name="name" select="True"/>
+            </search>
+            </field>
+        </record>
+        
+        <record model="ir.actions.act_window" id="act_open_cash_view">
+            <field name="name">Caisse</field>
+            <field name="type">ir.actions.act_window</field>
+            <field name="res_model">cash.register</field>
+            <field name="view_type">form</field>
+            <field name="view_mode">tree,form</field>
+            <field name="search_view_id" ref="view_cash_search"/>
+            <field name="domain">[]</field>
+            <field name="context">{}</field>
+        </record>
+        
+        <record model="ir.actions.act_window.view" id="act_open_cash_view_form">
+            <field name="act_window_id" ref="act_open_cash_view"/>
+            <field name="sequence" eval="20"/>
+            <field name="view_mode">form</field>
+            <field name="view_id" ref="view_cash_form"/>
+        </record>
+        
+        <record model="ir.actions.act_window.view" id="act_open_cash_view_tree">
+            <field name="act_window_id" ref="act_open_cash_view"/>
+            <field name="sequence" eval="10"/>
+            <field name="view_mode">tree</field>
+            <field name="view_id" ref="view_cash_tree"/>
+        </record>
+        
+        <menuitem id="menu_cash_main"
+            parent="account.menu_finance"
+            sequence="1"/>
+        <menuitem id="menu_sub_cash_menu" 
+            parent="menu_cash_main"
+            sequence="1"
+            name="Caisse"
+            action="act_open_cash_view"/>
+    </data>
+</odoo>
